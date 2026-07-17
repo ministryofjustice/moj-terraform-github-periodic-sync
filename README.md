@@ -91,7 +91,7 @@ No modules.
 | <a name="input_not_dry_run"></a> [not\_dry\_run](#input\_not\_dry\_run) | When true the poller performs writes. Defaults to false (shadow mode: log only). | `bool` | `false` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | EventBridge schedule for the poll. SLA is 30 min; 10 min gives headroom. | `string` | `"rate(10 minutes)"` | no |
 | <a name="input_sso_aws_region"></a> [sso\_aws\_region](#input\_sso\_aws\_region) | Region the IAM Identity Center instance is in. | `string` | n/a | yes |
-| <a name="input_sso_email_suffix"></a> [sso\_email\_suffix](#input\_sso\_email\_suffix) | Suffix stripped from Identity Store UserName to derive the GitHub login (e.g. @example.com). | `string` | `""` | no |
+| <a name="input_sso_email_suffix"></a> [sso\_email\_suffix](#input\_sso\_email\_suffix) | Suffix stripped from Identity Store UserName to derive the GitHub login (e.g. @example.com). | `string` | `"@digital.justice.gov.uk"` | no |
 | <a name="input_sso_identity_store_id"></a> [sso\_identity\_store\_id](#input\_sso\_identity\_store\_id) | Identity Store id. Leave empty to discover via sso:ListInstances at runtime. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags applied to resources, where applicable. | `map(string)` | `{}` | no |
 | <a name="input_v1_lambda_name"></a> [v1\_lambda\_name](#input\_v1\_lambda\_name) | Name of the v1 Lambda. On first run the window is seeded from its last execution time (CloudWatch Logs) to avoid a cutover gap. Empty disables this. | `string` | `"aws-sso-scim-github"` | no |
