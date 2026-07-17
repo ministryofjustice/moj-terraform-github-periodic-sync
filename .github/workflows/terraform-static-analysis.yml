@@ -14,46 +14,37 @@ permissions:
 
 jobs:
   terraform-static-analysis:
-    permissions:
-      pull-requests: write
     name: Terraform Static Analysis
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
-      - name: Run Analysis
-        uses: ministryofjustice/modernisation-platform-github-actions/terraform-static-analysis@d682f41c6f6b8c6bc0e06ae38ef41a464aa8a204 # v6.1.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          scan_type: changed
-          checkov_exclude: CKV_GIT_1,CKV_AWS_126,CKV2_AWS_38,CKV2_AWS_39
-          tflint_exclude: terraform_unused_declarations
-          tflint_call_module_type: none
+          persist-credentials: false
 
-  terraform-static-analysis-full-scan:
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-      pull-requests: write
-    name: Terraform Static Analysis - scan all directories
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
-          fetch-depth: 0
-      - name: Run Analysis
-        uses: ministryofjustice/modernisation-platform-github-actions/terraform-static-analysis@d682f41c6f6b8c6bc0e06ae38ef41a464aa8a204 # v6.1.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive -no-color
+
+      - name: Terraform init
+        run: terraform init -backend=false -no-color
+
+      - name: Terraform validate
+        run: terraform validate -no-color
+
+      # Static analysis via Checkov (as used by analytical-platform), replacing
+      # the previous tflint-based action which crashed during plugin install
+      # (sigstore attestation verification panic in `tflint --init`).
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@fa9edf8f0a491c59a924ea6accd5bdcf07752cff # v12.3107.0
         with:
-          scan_type: full
-          checkov_exclude: CKV_GIT_1,CKV_AWS_126,CKV2_AWS_38,CKV2_AWS_39
-          tflint_exclude: terraform_unused_declarations
-          tflint_call_module_type: none
+          directory: .
+          framework: terraform
+          download_external_modules: false
+          quiet: true
+          output_format: cli
+          skip_check: CKV_GIT_1,CKV_AWS_126,CKV2_AWS_38,CKV2_AWS_39
