@@ -33,7 +33,7 @@ variable "sso_identity_store_id" {
 variable "sso_email_suffix" {
   type        = string
   description = "Suffix stripped from Identity Store UserName to derive the GitHub login (e.g. @example.com)."
-  default     = ""
+  default     = "@digital.justice.gov.uk"
 }
 
 variable "not_dry_run" {
@@ -63,7 +63,7 @@ variable "lookback_minutes" {
 variable "v1_lambda_name" {
   type        = string
   description = "Name of the v1 Lambda. On first run the window is seeded from its last execution time (CloudWatch Logs) to avoid a cutover gap. Empty disables this."
-  default     = ""
+  default     = "aws-sso-scim-github"
 }
 
 variable "lambda_timeout" {
