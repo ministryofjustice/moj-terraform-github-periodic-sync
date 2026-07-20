@@ -12,3 +12,15 @@ env/
 terraform.tfstate
 terraform.tfstate.backup
 megalinter-reports
+
+# poller build + local secrets
+function.zip
+.build/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+.watermark.json
+*.pem
+app-secret.json

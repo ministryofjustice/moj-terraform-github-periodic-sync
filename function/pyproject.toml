@@ -1,0 +1,41 @@
+[project]
+name = "scim-sync-poller"
+version = "0.1.0"
+description = "Read-only core for the GitHub -> IAM Identity Center audit-log sync poller"
+requires-python = ">=3.13"
+# The pure logic core needs only the standard library. The "live" extra pulls the
+# read-only adapters' dependencies for the dry-run against a real org / Identity Center.
+dependencies = []
+
+[project.optional-dependencies]
+live = [
+    "httpx>=0.27",
+    "boto3>=1.34",
+    "pyjwt[crypto]>=2.8",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+scim-dry-run = "scim_sync.dry_run:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scim_sync"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

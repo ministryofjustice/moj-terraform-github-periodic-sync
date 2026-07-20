@@ -1,0 +1,47 @@
+[
+  {
+    "action": "team.add_member",
+    "_document_id": "doc-001",
+    "@timestamp": 1749648000000,
+    "actor": "alice",
+    "user": "bob",
+    "team": "ministryofjustice/platform-team"
+  },
+  {
+    "action": "team.remove_member",
+    "_document_id": "doc-002",
+    "@timestamp": 1749648001000,
+    "actor": "alice",
+    "user": "carol",
+    "team": "ministryofjustice/platform-team"
+  },
+  {
+    "action": "team.create",
+    "_document_id": "doc-003",
+    "@timestamp": 1749648002000,
+    "actor": "alice",
+    "team": "ministryofjustice/new-team"
+  },
+  {
+    "action": "org.add_member",
+    "_document_id": "doc-004",
+    "@timestamp": 1749648003000,
+    "actor": "alice",
+    "user": "dave"
+  },
+  {
+    "action": "repo.create",
+    "_document_id": "doc-005",
+    "@timestamp": 1749648004000,
+    "actor": "alice",
+    "repo": "ministryofjustice/some-repo"
+  },
+  {
+    "action": "team.add_member",
+    "_document_id": "doc-006",
+    "@timestamp": 1749648005000,
+    "actor": "alice",
+    "user": "erin",
+    "team": "ministryofjustice/platform-team"
+  }
+]
