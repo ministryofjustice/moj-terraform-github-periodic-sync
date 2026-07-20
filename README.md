@@ -49,7 +49,7 @@ If you're looking to raise an issue with this module, please create a new issue 
 | Name | Version |
 |------|---------|
 | <a name="provider_archive"></a> [archive](#provider\_archive) | 2.8.0 |
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.52.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.55.0 |
 | <a name="provider_external"></a> [external](#provider\_external) | 2.4.0 |
 
 ## Modules
