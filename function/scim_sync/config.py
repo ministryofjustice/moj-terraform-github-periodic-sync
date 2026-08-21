@@ -44,6 +44,19 @@ class Config:
     github_app_installation_id: str | None
     github_app_private_key_secret: str | None
     github_token: str | None
+    # Teams never synced (special/parent teams); mirrors v1's ignore list.
+    # Empty when constructed directly; load() supplies v1's defaults.
+    ignored_team_slugs: frozenset[str] = frozenset()
+
+
+_DEFAULT_IGNORED_TEAM_SLUGS = ("all-org-members", "business-units")
+
+
+def _parse_ignored_slugs(raw: str | None) -> frozenset[str]:
+    # Unset -> v1's defaults; set (even to empty) -> exactly what's given.
+    if raw is None:
+        return frozenset(_DEFAULT_IGNORED_TEAM_SLUGS)
+    return frozenset(s.strip().lower() for s in raw.split(",") if s.strip())
 
 
 def load() -> Config:
@@ -61,6 +74,7 @@ def load() -> Config:
         not_dry_run=os.environ.get("NOT_DRY_RUN", "").lower() in ("1", "true", "yes"),
         cursor_parameter_name=os.environ.get("AUDIT_CURSOR_PARAMETER", "/scim-sync/audit_cursor"),
         max_changes_per_run=int(os.environ.get("MAX_CHANGES_PER_RUN", "50")),
+        ignored_team_slugs=_parse_ignored_slugs(os.environ.get("IGNORED_TEAM_SLUGS")),
         v1_lambda_name=os.environ.get("V1_LAMBDA_NAME"),
         github_app_secret=os.environ.get("GITHUB_APP_SECRET"),
         github_app_id=os.environ.get("GITHUB_APP_ID"),

@@ -163,3 +163,48 @@ def test_quiet_poll_touches_no_identity_store():
 
     assert result.teams_touched == 0
     assert result.plans == []
+
+
+def test_ignored_team_slug_is_not_synced():
+    # A touched team on the ignore list must not be reconciled (and must not even
+    # query the Identity Store), but the watermark still advances past its event.
+    gh = FakeGitHub(
+        events=[_event("team.add_member", "d1", 2000, team="all-org-members")],
+        teams={"all-org-members": GitHubTeam(1, "all-org-members", "All", frozenset({"bob"}))},
+    )
+
+    class Exploding:
+        def list_groups(self):
+            raise AssertionError("ignored team must not query Identity Store")
+
+        list_users = list_groups
+        group_member_user_ids = list_groups
+
+    cfg = _cfg(ignored_team_slugs=frozenset({"all-org-members"}))
+    result = pipeline.poll_and_plan(cfg, gh, Exploding(), Watermark(0, None))
+
+    assert result.plans == []
+    assert result.teams_touched == 0
+    assert result.next_watermark == Watermark(2000, "d1")
+
+
+def test_membership_and_group_matching_is_case_insensitive():
+    # IC username and group DisplayName are cased differently from the GitHub
+    # login/slug; both must still match so the member is not a spurious removal.
+    gh = FakeGitHub(
+        events=[_event("team.add_member", "d1", 2000, team="platform-team")],
+        teams={"platform-team": GitHubTeam(42, "platform-team", "Platform", frozenset({"bob"}))},
+    )
+    is_client = FakeIdentityStore(
+        groups=[IdentityGroup("g1", "Platform-Team", None)],
+        users={"Bob@Example.com": "user-bob"},
+        members={"g1": frozenset({"user-bob"})},
+    )
+
+    result = pipeline.poll_and_plan(_cfg(), gh, is_client, Watermark(0, None))
+
+    assert len(result.plans) == 1
+    plan = result.plans[0]
+    assert plan.is_noop
+    assert plan.add == ()
+    assert plan.remove == ()

@@ -98,10 +98,10 @@ class GitHubClient:
         )
 
     def team_member_logins(self, team_slug: str) -> list[str]:
-        """Return current member logins for one team."""
+        """Return current member logins for one team (lower-cased, as v1 matches)."""
         slug = quote(team_slug, safe="")
         members = self._paginate(f"/orgs/{self._org}/teams/{slug}/members")
-        return [m["login"] for m in members if "login" in m]
+        return [m["login"].lower() for m in members if "login" in m]
 
     def get_team(self, team_slug: str) -> GitHubTeam | None:
         """Fetch a team's current member logins (and metadata) by slug.

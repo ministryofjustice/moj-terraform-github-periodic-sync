@@ -60,6 +60,20 @@ def test_app_path_takes_priority_and_mints_installation_token(monkeypatch):
     assert config.resolve_github_token(cfg) == "inst:123:456:PEM-BODY"
 
 
+def test_ignored_team_slugs_default(monkeypatch):
+    monkeypatch.setenv("GITHUB_ORG", "acme")
+    monkeypatch.delenv("IGNORED_TEAM_SLUGS", raising=False)
+    cfg = config.load()
+    assert cfg.ignored_team_slugs == frozenset({"all-org-members", "business-units"})
+
+
+def test_ignored_team_slugs_override_is_lowercased_and_trimmed(monkeypatch):
+    monkeypatch.setenv("GITHUB_ORG", "acme")
+    monkeypatch.setenv("IGNORED_TEAM_SLUGS", "Foo, bar ")
+    cfg = config.load()
+    assert cfg.ignored_team_slugs == frozenset({"foo", "bar"})
+
+
 def test_partial_app_creds_fall_through_to_token(monkeypatch):
     # App id without installation id is not enough -> use the env token.
     cfg = _cfg(github_app_id="123", github_token="tok123")
