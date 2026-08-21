@@ -78,9 +78,13 @@ def starting_watermark(cfg: config.Config, current: Watermark | None) -> Waterma
 
 
 def _login_to_user_id(users: dict[str, str], email_suffix: str) -> dict[str, str]:
-    """Map GitHub login -> Identity Store user-id by stripping the email suffix."""
+    """Map GitHub login -> Identity Store user-id by stripping the email suffix.
+
+    Lower-cased both sides (as v1 does): IC usernames and GitHub logins differ in
+    case, and an unmatched login would otherwise read as a spurious removal.
+    """
     return {
-        uname.replace(email_suffix, ""): uid
+        uname.replace(email_suffix, "").lower(): uid
         for uname, uid in users.items()
     }
 
@@ -105,16 +109,19 @@ def poll_and_plan(
     fresh = watermark.new_events(parsed, wm)
     touched = audit_events.touched_objects(fresh)
 
+    # Special/parent teams (all-org-members, business-units) are never synced.
+    target_slugs = touched.team_slugs - cfg.ignored_team_slugs
+
     plans: list[TeamPlan] = []
     skipped: list[str] = []
 
-    if touched.team_slugs:
+    if target_slugs:
         groups = is_client.list_groups()
         users = is_client.list_users()
-        by_name = {g.display_name: g for g in groups if g.display_name}
+        by_name = {g.display_name.lower(): g for g in groups if g.display_name}
         login_to_user_id = _login_to_user_id(users, cfg.email_suffix)
 
-        for slug in sorted(touched.team_slugs):
+        for slug in sorted(target_slugs):
             team = gh.get_team(slug)
             if team is None:
                 # Team gone (destroy/rename away): deletion is the reconciler's job.
@@ -122,7 +129,7 @@ def poll_and_plan(
                 continue
             # Identity is the slug == group DisplayName. A renamed team reads as a
             # new group; the old one is left to the nightly reconciler.
-            group = by_name.get(team.slug)
+            group = by_name.get(team.slug.lower())
             if group is None:
                 plans.append(build_new_group_plan(team, login_to_user_id))
                 continue
@@ -137,7 +144,7 @@ def poll_and_plan(
 
     return PlanResult(
         audit_events_pulled=len(parsed),
-        teams_touched=len(touched.team_slugs),
+        teams_touched=len(target_slugs),
         users_touched=len(touched.user_logins),
         plans=plans,
         skipped_slugs=skipped,
