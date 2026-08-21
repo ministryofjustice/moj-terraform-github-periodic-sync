@@ -80,11 +80,13 @@ def starting_watermark(cfg: config.Config, current: Watermark | None) -> Waterma
 def _login_to_user_id(users: dict[str, str], email_suffix: str) -> dict[str, str]:
     """Map GitHub login -> Identity Store user-id by stripping the email suffix.
 
-    Lower-cased both sides (as v1 does): IC usernames and GitHub logins differ in
-    case, and an unmatched login would otherwise read as a spurious removal.
+    Lower-case both sides (and the suffix) *before* stripping, so matching is
+    case-insensitive even when the username's suffix is cased differently from
+    ``email_suffix``; otherwise an unmatched login reads as a spurious removal.
     """
+    suffix = email_suffix.lower()
     return {
-        uname.replace(email_suffix, "").lower(): uid
+        uname.lower().replace(suffix, ""): uid
         for uname, uid in users.items()
     }
 

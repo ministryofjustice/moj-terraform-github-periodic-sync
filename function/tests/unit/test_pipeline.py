@@ -197,7 +197,7 @@ def test_membership_and_group_matching_is_case_insensitive():
     )
     is_client = FakeIdentityStore(
         groups=[IdentityGroup("g1", "Platform-Team", None)],
-        users={"Bob@example.com": "user-bob"},
+        users={"Bob@Example.com": "user-bob"},
         members={"g1": frozenset({"user-bob"})},
     )
 
