@@ -102,7 +102,9 @@ def test_existing_group_produces_membership_plan():
         members={"g1": frozenset({"user-carol"})},
     )
 
-    result = pipeline.poll_and_plan(_cfg(), gh, is_client, Watermark(0, None))
+    result = pipeline.poll_and_plan(
+        _cfg(), gh, is_client, Watermark(0, None), poll_started_ms=1000
+    )
 
     assert result.teams_touched == 1
     assert len(result.plans) == 1
@@ -176,11 +178,13 @@ def test_late_event_in_overlap_reconciles_team_without_rewinding_watermark():
         members={"g1": frozenset({"user-bob"})},
     )
 
-    result = pipeline.poll_and_plan(_cfg(), gh, is_client, Watermark(1000, "newer"))
+    result = pipeline.poll_and_plan(
+        _cfg(), gh, is_client, Watermark(1000, "newer"), poll_started_ms=2000
+    )
 
     assert result.teams_touched == 1
     assert {change.user_id for change in result.plans[0].remove} == {"user-bob"}
-    assert result.next_watermark == Watermark(1000, "newer")
+    assert result.next_watermark == Watermark(2000, None)
 
 
 def test_ignored_team_slug_is_not_synced():
@@ -199,7 +203,9 @@ def test_ignored_team_slug_is_not_synced():
         group_member_user_ids = list_groups
 
     cfg = _cfg(ignored_team_slugs=frozenset({"all-org-members"}))
-    result = pipeline.poll_and_plan(cfg, gh, Exploding(), Watermark(0, None))
+    result = pipeline.poll_and_plan(
+        cfg, gh, Exploding(), Watermark(0, None), poll_started_ms=1000
+    )
 
     assert result.plans == []
     assert result.teams_touched == 0

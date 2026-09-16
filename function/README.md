@@ -104,9 +104,10 @@ uv run --locked --python 3.13 --extra live scim-dry-run --baseline
 - **With `--baseline`:** teams in the org, the full-reconcile API-call count, and the
   percentage reduction — the concrete efficiency comparison.
 
-The watermark advances on each run and is saved only to the local
-`WATERMARK_FILE`, so a second run resumes from where the first stopped. It does
-not read or update the Lambda's SSM cursor. Delete the local file to start over.
+The watermark advances to the successful poll's start time and is saved only to
+the local `WATERMARK_FILE`, so the overlap moves forward and a second run resumes
+from where the first stopped. It does not read or update the Lambda's SSM cursor.
+Delete the local file to start over.
 
 ## Build & deploy (Lambda)
 

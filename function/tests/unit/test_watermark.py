@@ -2,6 +2,7 @@ from scim_sync.logic.audit_events import AuditEvent
 from scim_sync.logic.watermark import (
     Watermark,
     advance,
+    advance_to_poll_boundary,
     is_after,
     new_events,
     query_start_ms,
@@ -44,3 +45,15 @@ def test_advance_picks_newest():
 def test_advance_keeps_current_when_no_events():
     wm = Watermark(timestamp_ms=100, document_id="d1")
     assert advance(wm, []) == wm
+
+
+def test_successful_poll_advances_to_poll_boundary_when_no_events_arrive():
+    wm = Watermark(timestamp_ms=100, document_id="d1")
+    assert advance_to_poll_boundary(wm, [], 200) == Watermark(200, None)
+
+
+def test_event_newer_than_poll_boundary_remains_authoritative():
+    wm = Watermark(timestamp_ms=100, document_id="d1")
+    assert advance_to_poll_boundary(wm, [_event(250, "future")], 200) == Watermark(
+        250, "future"
+    )
