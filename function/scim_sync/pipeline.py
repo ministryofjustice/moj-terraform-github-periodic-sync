@@ -109,7 +109,9 @@ def poll_and_plan(
     raw = gh.audit_log(audit_phrase(start_ms))
     parsed = audit_events.parse_entries(raw)
     fresh = watermark.new_events(parsed, wm)
-    touched = audit_events.touched_objects(fresh)
+    # Reconcile teams from the complete overlap window so late-arriving events
+    # older than the watermark are not acknowledged without being processed.
+    touched = audit_events.touched_objects(parsed)
 
     # Special/parent teams (all-org-members, business-units) are never synced.
     target_slugs = touched.team_slugs - cfg.ignored_team_slugs

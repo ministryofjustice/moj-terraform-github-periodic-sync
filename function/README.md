@@ -13,7 +13,7 @@ reconciler's job).
 ## Layout
 
 ```
-src/scim_sync/
+scim_sync/
   models.py            # plain immutable data types
   config.py            # env-based config (+ Secrets Manager token fetch)
   pipeline.py          # shared poll -> build-plans orchestration
@@ -40,8 +40,8 @@ tests/
 Requires Python 3.13. With [uv](https://docs.astral.sh/uv/):
 
 ```sh
-cd poller
-uv run --python 3.13 --with pytest pytest -q
+cd function
+uv run --locked --python 3.13 --extra dev --extra live pytest -q
 ```
 
 Or with an existing 3.13 environment:
@@ -86,15 +86,15 @@ export WATERMARK_FILE=.watermark.json
 ### 2. Run it
 
 ```sh
-cd poller
-uv run --python 3.13 --extra live scim-dry-run
+cd function
+uv run --locked --python 3.13 --extra live scim-dry-run
 ```
 
 Add `--baseline` to also measure a real full-reconcile read pass and print the
 API-call reduction for this cycle:
 
 ```sh
-uv run --python 3.13 --extra live scim-dry-run -- --baseline
+uv run --locked --python 3.13 --extra live scim-dry-run --baseline
 ```
 
 ### What you'll see
@@ -104,8 +104,9 @@ uv run --python 3.13 --extra live scim-dry-run -- --baseline
 - **With `--baseline`:** teams in the org, the full-reconcile API-call count, and the
   percentage reduction — the concrete efficiency comparison.
 
-The watermark advances on each run and is saved to `WATERMARK_FILE`, so a second
-run resumes from where the first stopped (delete the file to start over).
+The watermark advances on each run and is saved only to the local
+`WATERMARK_FILE`, so a second run resumes from where the first stopped. It does
+not read or update the Lambda's SSM cursor. Delete the local file to start over.
 
 ## Build & deploy (Lambda)
 
@@ -113,13 +114,13 @@ The Lambda runtime ships `boto3` but **not** `httpx`, so the deployment package
 must vendor the `live` dependencies alongside the source.
 
 ```sh
-cd poller
+cd function
 rm -rf build && mkdir -p build
 # vendor runtime deps for the Lambda platform
 uv pip install --python 3.13 --target build \
   --python-platform x86_64-manylinux2014 --only-binary=:all: httpx
 # add the source
-cp -r src/scim_sync build/scim_sync
+cp -r scim_sync build/scim_sync
 # zip it
 (cd build && zip -qr ../dist/poller.zip .)
 ```

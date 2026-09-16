@@ -4,7 +4,7 @@
 
 Terraform module that deploys a scheduled AWS Lambda which keeps AWS IAM Identity Center (SSO) groups in step with GitHub team membership.
 
-The poller reads the GitHub organisation [audit log](https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization) on an EventBridge schedule (outbound-only; no inbound webhook), works out the delta for the teams that changed since the last run, and applies group creations and membership add/removes to the Identity Store. It is **dry-run by default** (`not_dry_run = false`) — set `not_dry_run = true` to enable writes once you have soaked it in shadow mode.
+The poller reads the GitHub organisation [audit log](https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization) on an EventBridge schedule (outbound-only; no inbound webhook), works out the delta for the teams that changed since the last run, and applies group creations and membership add/removes to the Identity Store. It is **dry-run by default** (`not_dry_run = false`) — set `not_dry_run = true` to enable writes once you have soaked it in shadow mode. Shadow runs do not advance the applied-event cursor, so observed changes remain available when live mode is enabled.
 
 Deleting empty groups and orphaned users is intentionally out of scope; that is left to a separate reconciler.
 
