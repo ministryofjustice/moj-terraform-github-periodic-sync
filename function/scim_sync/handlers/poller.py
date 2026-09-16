@@ -52,8 +52,8 @@ def handler(event: object = None, context: object = None) -> dict:
     )
     apply_result = applier.apply(plan_result.plans)
 
-    # Shadow runs must not consume changes that have not been applied. In live
-    # mode this remains the final write, so failures leave the cursor untouched.
+    # Shadow runs must not consume unapplied changes. In live mode, update the
+    # cursor last so any earlier failure leaves it untouched.
     if cfg.not_dry_run:
         store.put(plan_result.next_watermark)
 
