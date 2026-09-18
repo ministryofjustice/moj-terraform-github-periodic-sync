@@ -43,7 +43,7 @@ re-reconciling a team is idempotent and converges to the same state.
 We deliberately frame this as tiers, cheapest first. **Stop as soon as the symptoms are gone.**
 
 | Tier | Change | New infra | Kills 15m wall? | When to stop here |
-|------|--------|-----------|-----------------|-------------------|
+| ------ | -------- | ----------- | ----------------- | ------------------- |
 | **0** | Fix bursting in the existing Lambda: `await` writes, client-side rate limiter, skip unchanged teams via a stored membership hash. | None | Maybe (if most teams are unchanged) | If runtime drops comfortably under 15m. |
 | **1** | Move the same logic to a **scheduled ECS/Fargate task**. No time limit; reuse the code. | One task definition | Yes | If you just need the time limit gone and polling-everything is acceptable. |
 | **2 (recommended)** | **Audit-log polling**: a scheduled Lambda reads the org audit log, reconciles only the teams/users mentioned. | One SSM parameter (cursor) | Yes | The target design — see §3. |
@@ -91,7 +91,7 @@ flowchart TD
 ### Audit-log actions we care about
 
 | Action(s) | Reconcile |
-|-----------|-----------|
+| ----------- | ----------- |
 | `team.add_member`, `team.remove_member` | that team's membership |
 | `team.create`, `team.rename` | that slug's group (create if missing) |
 | `team.destroy` | poller skips; nightly reconciler removes the orphaned group |
@@ -136,7 +136,7 @@ New teams are onboarded to AWS continuously and **cannot wait** for the nightly 
 safe to defer, so it is the **reconciler's** job.
 
 | Operation | Owner | When | Rationale |
-|-----------|-------|------|-----------|
+| ----------- | ------- | ------ | ----------- |
 | Create group for a new team | **Poller** | Immediately (next poll) | New groups are onboarded all the time; 12h lag is unacceptable. |
 | Add / remove members | **Poller** | Immediately (next poll) | Frequent churn — the poller's whole reason to exist. |
 | **Delete empty groups** | **Reconciler** | Nightly | Rare + destructive; only ever fired from whole-state reconciliation, never one delta event. |
@@ -160,7 +160,7 @@ back to Tier 1 (Fargate full-delta scan) or Tier 3 (webhooks).
 ## 5. Why Python (and the library choices)
 
 | Concern | Choice | Notes |
-|---------|--------|-------|
+| --------- | -------- | ------- |
 | Runtime | **Python 3.13** Lambda | |
 | AWS SDK | **boto3** (`identitystore`, `dynamodb`) | |
 | GitHub API | **REST via `httpx`** | Audit log + per-team member reads; simple, paginated, retryable. |
@@ -214,7 +214,7 @@ thorough. Add it back only if the nightly run is *measured* to be too slow.
 **Idempotency rules (every operation safe to run twice):**
 
 | Operation | Rule |
-|-----------|------|
+| ----------- | ------ |
 | create group/user | If it already exists, record mapping and succeed. (Group create = poller.) |
 | add membership | If already a member, succeed. |
 | remove membership | If not a member, succeed. |
@@ -327,7 +327,7 @@ Carry forward useful v1 variables: `github_organisation`, `github_app_id`,
 Run v2 **alongside** v1; v1 stays the source of truth until v2 is proven.
 
 | Phase | What | Writes? | Exit criteria |
-|-------|------|---------|---------------|
+| ------- | ------ | --------- | --------------- |
 | **0. Spike** | Confirm App can read the org audit log (§4). | — | `GET /orgs/{org}/audit-log` returns the actions we need. |
 | **1. Tier 0 quick win** | In v1 (or ported logic): `await` writes, rate limiter, skip-unchanged hash. Measure runtime. | n/a | Decide whether Tier 0 alone is enough. |
 | **2. Scaffold** | Repo, Terraform skeleton, CI, packaging, observability, pure `diff` + audit-event mapping with unit tests. | — | Poller deploys; mapping + diff unit tests pass. |
