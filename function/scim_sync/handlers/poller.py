@@ -52,9 +52,10 @@ def handler(event: object = None, context: object = None) -> dict:
     )
     apply_result = applier.apply(plan_result.plans)
 
-    # Absolute last write: advance the cursor only after every preceding step
-    # succeeded. On failure it stays put and the next poll re-covers the window.
-    store.put(plan_result.next_watermark)
+    # Shadow runs must not consume unapplied changes. In live mode, update the
+    # cursor last so any earlier failure leaves it untouched.
+    if cfg.not_dry_run:
+        store.put(plan_result.next_watermark)
 
     summary = {
         "dry_run": not cfg.not_dry_run,

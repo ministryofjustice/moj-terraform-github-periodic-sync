@@ -59,3 +59,18 @@ def advance(current: Watermark, events: Iterable[AuditEvent]) -> Watermark:
         if event.timestamp_ms > latest.timestamp_ms:
             latest = Watermark(event.timestamp_ms, event.document_id)
     return latest
+
+
+def advance_to_poll_boundary(
+    current: Watermark, events: Iterable[AuditEvent], poll_started_ms: int
+) -> Watermark:
+    """Advance past a successful poll while preserving future-dated events.
+
+    Using the poll start as the normal boundary lets the overlap window move
+    forward during quiet periods. The next poll still re-reads the overlap, so
+    events that become visible shortly after this poll are reconciled safely.
+    """
+    latest_event = advance(current, events)
+    if latest_event.timestamp_ms > poll_started_ms:
+        return latest_event
+    return Watermark(timestamp_ms=poll_started_ms, document_id=None)
