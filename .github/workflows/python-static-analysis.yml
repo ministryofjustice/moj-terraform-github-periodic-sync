@@ -1,6 +1,7 @@
+---
 name: Python Static Analysis
 
-on:
+"on":
   workflow_dispatch:
   pull_request:
     branches:
