@@ -12,8 +12,8 @@ reconciler's job).
 
 ## Layout
 
-```
-src/scim_sync/
+```text
+scim_sync/
   models.py            # plain immutable data types
   config.py            # env-based config (+ Secrets Manager token fetch)
   pipeline.py          # shared poll -> build-plans orchestration
@@ -40,8 +40,8 @@ tests/
 Requires Python 3.13. With [uv](https://docs.astral.sh/uv/):
 
 ```sh
-cd poller
-uv run --python 3.13 --with pytest pytest -q
+cd function
+uv run --locked --python 3.13 --extra dev --extra live pytest -q
 ```
 
 Or with an existing 3.13 environment:
@@ -75,7 +75,8 @@ export AWS_ACCESS_KEY_ID=...
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_SESSION_TOKEN=...                # if using temporary creds
 export AWS_REGION="eu-west-2"
-export SSO_IDENTITY_STORE_ID="d-xxxxxxxxxx"  # optional: auto-discovered via sso-admin if unset
+# Optional: auto-discovered via sso-admin if unset.
+export SSO_IDENTITY_STORE_ID="d-xxxxxxxxxx"
 export SSO_EMAIL_SUFFIX="@digital.justice.gov.uk"
 
 # optional
@@ -86,26 +87,30 @@ export WATERMARK_FILE=.watermark.json
 ### 2. Run it
 
 ```sh
-cd poller
-uv run --python 3.13 --extra live scim-dry-run
+cd function
+uv run --locked --python 3.13 --extra live scim-dry-run
 ```
 
 Add `--baseline` to also measure a real full-reconcile read pass and print the
 API-call reduction for this cycle:
 
 ```sh
-uv run --python 3.13 --extra live scim-dry-run -- --baseline
+uv run --locked --python 3.13 --extra live scim-dry-run --baseline
 ```
 
 ### What you'll see
 
-- The dry-run plan: per team, the memberships it *would* add/remove (no-op teams summarised).
-- **This run (delta):** audit events pulled, teams to reconcile, GitHub + Identity API calls.
-- **With `--baseline`:** teams in the org, the full-reconcile API-call count, and the
-  percentage reduction — the concrete efficiency comparison.
+- The dry-run plan: per team, the memberships it *would* add/remove
+  (no-op teams summarised).
+- **This run (delta):** audit events pulled, teams to reconcile, and GitHub and
+  Identity API calls.
+- **With `--baseline`:** teams in the org, the full-reconcile API-call count,
+  and the percentage reduction — the concrete efficiency comparison.
 
-The watermark advances on each run and is saved to `WATERMARK_FILE`, so a second
-run resumes from where the first stopped (delete the file to start over).
+The watermark advances to the successful poll's start time and is saved only to
+the local `WATERMARK_FILE`, so the overlap moves forward and a second run resumes
+from where the first stopped. It does not read or update the Lambda's SSM cursor.
+Delete the local file to start over.
 
 ## Build & deploy (Lambda)
 
@@ -113,13 +118,13 @@ The Lambda runtime ships `boto3` but **not** `httpx`, so the deployment package
 must vendor the `live` dependencies alongside the source.
 
 ```sh
-cd poller
+cd function
 rm -rf build && mkdir -p build
 # vendor runtime deps for the Lambda platform
 uv pip install --python 3.13 --target build \
   --python-platform x86_64-manylinux2014 --only-binary=:all: httpx
 # add the source
-cp -r src/scim_sync build/scim_sync
+cp -r scim_sync build/scim_sync
 # zip it
 (cd build && zip -qr ../dist/poller.zip .)
 ```
@@ -130,17 +135,22 @@ Then deploy with Terraform (from `../terraform`):
 terraform init
 terraform apply \
   -var 'github_org=ministryofjustice' \
-  -var 'github_app_secret_arn=arn:aws:secretsmanager:eu-west-2:...:secret:github_periodic_sync_app' \
+  -var 'github_app_secret_arn=<secret-arn>' \
   -var 'sso_email_suffix=@digital.justice.gov.uk' \
   -var 'lambda_package_path=../poller/dist/poller.zip'
-  # not_dry_run defaults to false (shadow mode). Set -var 'not_dry_run=true' to go live.
+  # not_dry_run defaults to false (shadow mode).
+  # Set -var 'not_dry_run=true' to go live.
 ```
 
 The poller authenticates as a **GitHub App**. App credentials live in **one JSON
 Secrets Manager secret** (so nothing app-specific is in Terraform or state):
 
 ```json
-{ "app_id": "4175736", "installation_id": "143349949", "private_key": "-----BEGIN RSA PRIVATE KEY-----\n..." }
+{
+  "app_id": "4175736",
+  "installation_id": "143349949",
+  "private_key": "-----BEGIN RSA PRIVATE KEY-----\n..."
+}
 ```
 
 The poller reads it and mints a short-lived installation token per invocation.

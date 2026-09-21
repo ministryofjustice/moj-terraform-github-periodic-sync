@@ -102,7 +102,9 @@ def test_existing_group_produces_membership_plan():
         members={"g1": frozenset({"user-carol"})},
     )
 
-    result = pipeline.poll_and_plan(_cfg(), gh, is_client, Watermark(0, None))
+    result = pipeline.poll_and_plan(
+        _cfg(), gh, is_client, Watermark(0, None), poll_started_ms=1000
+    )
 
     assert result.teams_touched == 1
     assert len(result.plans) == 1
@@ -165,6 +167,26 @@ def test_quiet_poll_touches_no_identity_store():
     assert result.plans == []
 
 
+def test_late_event_in_overlap_reconciles_team_without_rewinding_watermark():
+    gh = FakeGitHub(
+        events=[_event("team.remove_member", "late", 900, team="platform-team")],
+        teams={"platform-team": GitHubTeam(42, "platform-team", "Platform", frozenset())},
+    )
+    is_client = FakeIdentityStore(
+        groups=[IdentityGroup("g1", "platform-team", None)],
+        users={"bob@example.com": "user-bob"},
+        members={"g1": frozenset({"user-bob"})},
+    )
+
+    result = pipeline.poll_and_plan(
+        _cfg(), gh, is_client, Watermark(1000, "newer"), poll_started_ms=2000
+    )
+
+    assert result.teams_touched == 1
+    assert {change.user_id for change in result.plans[0].remove} == {"user-bob"}
+    assert result.next_watermark == Watermark(2000, None)
+
+
 def test_ignored_team_slug_is_not_synced():
     # A touched team on the ignore list must not be reconciled (and must not even
     # query the Identity Store), but the watermark still advances past its event.
@@ -181,7 +203,9 @@ def test_ignored_team_slug_is_not_synced():
         group_member_user_ids = list_groups
 
     cfg = _cfg(ignored_team_slugs=frozenset({"all-org-members"}))
-    result = pipeline.poll_and_plan(cfg, gh, Exploding(), Watermark(0, None))
+    result = pipeline.poll_and_plan(
+        cfg, gh, Exploding(), Watermark(0, None), poll_started_ms=1000
+    )
 
     assert result.plans == []
     assert result.teams_touched == 0

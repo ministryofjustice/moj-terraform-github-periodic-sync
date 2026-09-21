@@ -96,6 +96,8 @@ def poll_and_plan(
     gh: GitHubClient,
     is_client: IdentityStoreClient,
     current_wm: Watermark | None,
+    *,
+    poll_started_ms: int | None = None,
 ) -> PlanResult:
     """Poll the audit log from ``current_wm`` and build one plan per touched team.
 
@@ -103,13 +105,18 @@ def poll_and_plan(
     so a quiet poll costs nothing on the AWS side. Read-only: returns plans, never
     applies them.
     """
+    if poll_started_ms is None:
+        poll_started_ms = int(time.time() * 1000)
+
     wm = starting_watermark(cfg, current_wm)
     start_ms = watermark.query_start_ms(wm.timestamp_ms, _OVERLAP_MS)
 
     raw = gh.audit_log(audit_phrase(start_ms))
     parsed = audit_events.parse_entries(raw)
     fresh = watermark.new_events(parsed, wm)
-    touched = audit_events.touched_objects(fresh)
+    # Reconcile teams from the complete overlap window so late-arriving events
+    # older than the watermark are not acknowledged without being processed.
+    touched = audit_events.touched_objects(parsed)
 
     # Special/parent teams (all-org-members, business-units) are never synced.
     target_slugs = touched.team_slugs - cfg.ignored_team_slugs
@@ -150,5 +157,5 @@ def poll_and_plan(
         users_touched=len(touched.user_logins),
         plans=plans,
         skipped_slugs=skipped,
-        next_watermark=watermark.advance(wm, fresh),
+        next_watermark=watermark.advance_to_poll_boundary(wm, fresh, poll_started_ms),
     )
