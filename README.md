@@ -1,6 +1,6 @@
 # MoJ GitHub Periodic Sync
 
-[![Standards Icon]][Standards Link] [![Format Code Icon]][Format Code Link] [![Scorecards Icon]][Scorecards Link] [![Test Icon]][Test Link] [![Terraform SCA Icon]][Terraform SCA Link]
+[![Standards Icon]][Standards Link] [![Scorecards Icon]][Scorecards Link] [![Code Quality Icon]][Code Quality Link] [![Test Icon]][Test Link] 
 
 Terraform module that deploys a scheduled AWS Lambda which keeps AWS IAM Identity Center (SSO) groups in step with GitHub team membership.
 
@@ -109,11 +109,9 @@ No modules.
 
 [Standards Link]: https://github-community.service.justice.gov.uk/repository-standards/moj-terraform-github-periodic-sync "Repo standards badge."
 [Standards Icon]: https://github-community.service.justice.gov.uk/repository-standards/api/moj-terraform-github-periodic-sync/badge
-[Format Code Icon]: https://img.shields.io/github/actions/workflow/status/ministryofjustice/moj-terraform-github-periodic-sync/format-code.yml?labelColor=231f20&style=for-the-badge&label=Format%20Code
-[Format Code Link]: https://github.com/ministryofjustice/moj-terraform-github-periodic-sync/actions/workflows/format-code.yml
+[Code Quality Icon]: https://img.shields.io/github/actions/workflow/status/ministryofjustice/moj-terraform-github-periodic-sync/code-quality.yml?branch=main&labelColor=231f20&style=for-the-badge&label=Code%20Quality
+[Code Quality Link]: https://github.com/ministryofjustice/moj-terraform-github-periodic-sync/actions/workflows/code-quality.yml
 [Scorecards Icon]: https://img.shields.io/github/actions/workflow/status/ministryofjustice/moj-terraform-github-periodic-sync/scorecards.yml?branch=main&labelColor=231f20&style=for-the-badge&label=Scorecards
 [Scorecards Link]: https://github.com/ministryofjustice/moj-terraform-github-periodic-sync/actions/workflows/scorecards.yml
 [Test Icon]: https://img.shields.io/github/actions/workflow/status/ministryofjustice/moj-terraform-github-periodic-sync/test.yml?branch=main&labelColor=231f20&style=for-the-badge&label=Unit%20Tests
 [Test Link]: https://github.com/ministryofjustice/moj-terraform-github-periodic-sync/actions/workflows/test.yml
-[Terraform SCA Icon]: https://img.shields.io/github/actions/workflow/status/ministryofjustice/moj-terraform-github-periodic-sync/terraform-static-analysis.yml?branch=main&labelColor=231f20&style=for-the-badge&label=Terraform%20Static%20Code%20Analysis
-[Terraform SCA Link]: https://github.com/ministryofjustice/moj-terraform-github-periodic-sync/actions/workflows/terraform-static-analysis.yml
